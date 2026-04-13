@@ -3,12 +3,13 @@ from functools import lru_cache
 
 
 class Settings(BaseSettings):
+    GOOGLE_API_KEY: str = ""
     GROQ_API_KEY: str = ""
     CAL_COM_LINK: str = "https://cal.com/utkersh-basnet"
     CHROMA_PERSIST_DIR: str = "./chroma_db"
     CHAT_MODEL: str = "llama-3.3-70b-versatile"
     VOICE_MODEL: str = "llama-3.1-8b-instant"
-    EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    EMBEDDING_MODEL: str = "models/gemini-embedding-001"
     VAPI_API_KEY: str = ""
     TWILIO_ACCOUNT_SID: str = ""
     TWILIO_AUTH_TOKEN: str = ""

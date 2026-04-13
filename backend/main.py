@@ -20,8 +20,8 @@ app = FastAPI(
 settings = get_settings()
 print("\n🚀 Starting AI Persona Assistant...")
 print(f"   Model: {settings.CHAT_MODEL}")
-print(f"   Data dir: {settings.DATA_DIR}")
-print("   Startup mode: lazy lightweight retrieval\n")
+print(f"   Vector DB: {settings.CHROMA_PERSIST_DIR}")
+print("   Startup mode: lazy Chroma initialization\n")
 
 # CORS — allow the Next.js frontend + Vapi
 app.add_middleware(
@@ -56,5 +56,5 @@ async def health_check():
         "rag_initialized": state.persona_chat is not None,
         "initializing": state.initializing,
         "last_error": state.last_error,
-        "retrieval_mode": "lightweight",
+        "retrieval_mode": "chroma",
     }

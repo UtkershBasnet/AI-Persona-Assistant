@@ -6,14 +6,14 @@ from dataclasses import dataclass
 from typing import Optional
 
 from .chain import PersonaChat
-from .retriever import LightweightRetriever
+from .vectorstore import load_vectorstore
 from ..config import get_settings
 
 
 @dataclass
 class RuntimeState:
     persona_chat: Optional[PersonaChat] = None
-    retriever: Optional[LightweightRetriever] = None
+    vectorstore: Optional[object] = None
     initializing: bool = False
     last_error: Optional[str] = None
 
@@ -29,11 +29,11 @@ def get_runtime_state() -> RuntimeState:
 
 async def ensure_runtime_ready() -> RuntimeState:
     """Load the vector store and chat chain on first use."""
-    if _state.persona_chat is not None and _state.retriever is not None:
+    if _state.persona_chat is not None and _state.vectorstore is not None:
         return _state
 
     async with _init_lock:
-        if _state.persona_chat is not None and _state.retriever is not None:
+        if _state.persona_chat is not None and _state.vectorstore is not None:
             return _state
 
         _state.initializing = True
@@ -41,19 +41,20 @@ async def ensure_runtime_ready() -> RuntimeState:
         settings = get_settings()
 
         try:
-            retriever = await asyncio.to_thread(
-                LightweightRetriever.from_data_dir,
-                data_dir=settings.DATA_DIR,
+            vectorstore = await asyncio.to_thread(
+                load_vectorstore,
+                persist_dir=settings.CHROMA_PERSIST_DIR,
+                embedding_model_name=settings.EMBEDDING_MODEL,
             )
             persona = PersonaChat(
-                retriever=retriever,
+                vectorstore=vectorstore,
                 model=settings.CHAT_MODEL,
                 cal_link=settings.CAL_COM_LINK,
             )
-            _state.retriever = retriever
+            _state.vectorstore = vectorstore
             _state.persona_chat = persona
             print("✅ AI Persona ready!")
-            print("   Retrieval: lightweight in-memory index")
+            print(f"   Vector DB: {settings.CHROMA_PERSIST_DIR}")
             print("   Vapi endpoint: /api/vapi/chat/completions\n")
         except Exception as exc:
             _state.last_error = str(exc)

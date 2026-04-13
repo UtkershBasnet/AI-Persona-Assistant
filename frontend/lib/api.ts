@@ -2,7 +2,8 @@
  * API client for the AI Persona backend.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL || "https://ai-persona-assistant.onrender.com";
 
 export interface BookingInfo {
   success: boolean;

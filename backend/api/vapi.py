@@ -78,11 +78,15 @@ When a caller wants to schedule a meeting:
 
 def _retrieve_context(query: str) -> str:
     """Retrieve relevant document chunks for RAG."""
-    retriever = get_runtime_state().retriever
-    if not retriever:
+    vectorstore = get_runtime_state().vectorstore
+    if not vectorstore:
         return "No context available."
 
-    docs = retriever.invoke(query, k=4)
+    retriever = vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": 4},
+    )
+    docs = retriever.invoke(query)
     if not docs:
         return "No specific context found."
 
