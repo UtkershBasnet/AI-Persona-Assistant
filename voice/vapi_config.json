@@ -1,0 +1,41 @@
+{
+  "id": "f95bbc81-0acf-48c6-90e2-f06c3da964f0",
+  "orgId": "01985c29-894d-431e-8455-7655d1e5a8e2",
+  "name": "Utkersh Basnet AI Persona",
+  "voice": {
+    "voiceId": "burt",
+    "provider": "11labs"
+  },
+  "createdAt": "2026-04-13T13:59:19.498Z",
+  "updatedAt": "2026-04-13T13:59:19.498Z",
+  "model": {
+    "url": "https://94ce-103-180-45-46.ngrok-free.app/api/vapi/chat/completions",
+    "model": "llama-3.1-8b-instant",
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are Utkersh Basnet's AI phone representative."
+      }
+    ],
+    "provider": "custom-llm",
+    "maxTokens": 250,
+    "temperature": 0.4,
+    "metadataSendMode": "off"
+  },
+  "firstMessage": "Hey! Thanks for calling. I'm Utkersh's AI representative. You can ask me about his projects, experience, tech stack, or we can schedule an interview. What would you like to know?",
+  "endCallMessage": "Thanks for calling! Don't forget, you can book a time with me at cal dot com slash utkersh basnet. Have a great day!",
+  "transcriber": {
+    "model": "nova-3",
+    "language": "en",
+    "provider": "deepgram"
+  },
+  "silenceTimeoutSeconds": 30,
+  "maxDurationSeconds": 600,
+  "firstMessageMode": "assistant-speaks-first",
+  "stopSpeakingPlan": {
+    "numWords": 2,
+    "voiceSeconds": 0.3,
+    "backoffSeconds": 1
+  },
+  "isServerUrlSecretSet": false
+}
