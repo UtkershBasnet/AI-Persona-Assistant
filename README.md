@@ -3,9 +3,9 @@
 An AI-powered portfolio assistant for Utkersh Basnet. Ask about his experience and projects, book interviews through Cal.com, and interact via web chat or a phone call — all grounded in his real resume and GitHub repos.
 
 **Live links**
-- Chat UI: `https://ai-persona.vercel.app`
-- Backend API: `https://ai-persona.onrender.com`
-- Voice: call the Twilio number linked to the Vapi assistant
+- Chat UI: https://ai-persona.vercel.app
+- Backend API: https://ai-persona.onrender.com
+- Voice: +16626415534, https://vapi.ai?demo=true&shareKey=b812c7df-ee34-4a17-806b-6c807db4028f&assistantId=99fe09d3-bc2c-46d3-aaf9-f2bffee9cc3b
 
 ---
 
