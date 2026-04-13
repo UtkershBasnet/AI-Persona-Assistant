@@ -21,22 +21,13 @@ from fastapi.responses import StreamingResponse
 from groq import Groq
 
 from ..config import get_settings
+from ..rag.runtime import ensure_runtime_ready, get_runtime_state
 
 router = APIRouter(prefix="/api/vapi", tags=["vapi"])
 
 CAL_API_BASE = "https://api.cal.com/v2"
 BOOK_MEETING_PATTERN = re.compile(r'\[BOOK_MEETING\](.*?)\[/BOOK_MEETING\]', re.DOTALL)
 IST = ZoneInfo("Asia/Kolkata")
-
-# Set by main.py after vectorstore is loaded
-_vectorstore = None
-
-
-def set_vectorstore(vs):
-    """Set the vectorstore instance (called from main.py)."""
-    global _vectorstore
-    _vectorstore = vs
-
 
 def _normalize_booking_datetime(local_dt: datetime, now_ist: datetime) -> datetime:
     """Shift stale model-generated years to the next valid future occurrence."""
@@ -87,14 +78,11 @@ When a caller wants to schedule a meeting:
 
 def _retrieve_context(query: str) -> str:
     """Retrieve relevant document chunks for RAG."""
-    if not _vectorstore:
+    retriever = get_runtime_state().retriever
+    if not retriever:
         return "No context available."
 
-    retriever = _vectorstore.as_retriever(
-        search_type="similarity",
-        search_kwargs={"k": 4},  # Fewer chunks for voice — keep it fast
-    )
-    docs = retriever.invoke(query)
+    docs = retriever.invoke(query, k=4)
     if not docs:
         return "No specific context found."
 
@@ -213,6 +201,11 @@ async def chat_completions(request: Request):
     body = await request.json()
     messages = body.get("messages", [])
     is_stream = body.get("stream", True)
+
+    try:
+        await ensure_runtime_ready()
+    except Exception:
+        pass
 
     # Extract the last user message for RAG retrieval
     last_user_msg = ""

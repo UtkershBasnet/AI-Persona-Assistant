@@ -1,56 +1,27 @@
 """
 FastAPI application — Utkersh Basnet's AI Persona Assistant.
 """
-import os
-from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import get_settings
-from .api.chat import router as chat_router, set_persona_chat
+from .api.chat import router as chat_router
 from .api.calendar import router as calendar_router
-from .api.vapi import router as vapi_router, set_vectorstore as set_vapi_vectorstore
-from .rag.vectorstore import load_vectorstore
-from .rag.chain import PersonaChat
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Initialize the RAG pipeline on startup."""
-    settings = get_settings()
-    print("\n🚀 Starting AI Persona Assistant...")
-    print(f"   Model: {settings.CHAT_MODEL}")
-    print(f"   Vector DB: {settings.CHROMA_PERSIST_DIR}")
-
-    try:
-        vectorstore = load_vectorstore(
-            persist_dir=settings.CHROMA_PERSIST_DIR,
-            embedding_model_name=settings.EMBEDDING_MODEL,
-        )
-        persona = PersonaChat(
-            vectorstore=vectorstore,
-            model=settings.CHAT_MODEL,
-            cal_link=settings.CAL_COM_LINK,
-        )
-        set_persona_chat(persona)
-        set_vapi_vectorstore(vectorstore)
-        print("✅ AI Persona ready!")
-        print(f"   Vapi endpoint: /api/vapi/chat/completions\n")
-    except FileNotFoundError as e:
-        print(f"\n⚠️  {e}")
-        print("   The chat endpoint will return 503 until you run:")
-        print("   python -m backend.scripts.ingest\n")
-
-    yield
-    print("\n👋 Shutting down AI Persona Assistant...")
+from .api.vapi import router as vapi_router
+from .rag.runtime import get_runtime_state
 
 
 app = FastAPI(
     title="AI Persona Assistant",
     description="Utkersh Basnet's AI representative — chat, ask about projects, and book interviews.",
     version="1.0.0",
-    lifespan=lifespan,
 )
+
+settings = get_settings()
+print("\n🚀 Starting AI Persona Assistant...")
+print(f"   Model: {settings.CHAT_MODEL}")
+print(f"   Data dir: {settings.DATA_DIR}")
+print("   Startup mode: lazy lightweight retrieval\n")
 
 # CORS — allow the Next.js frontend + Vapi
 app.add_middleware(
@@ -79,8 +50,11 @@ async def root():
 
 @app.get("/health", tags=["health"])
 async def health_check():
-    from .api.chat import persona_chat
+    state = get_runtime_state()
     return {
         "status": "healthy",
-        "rag_initialized": persona_chat is not None,
+        "rag_initialized": state.persona_chat is not None,
+        "initializing": state.initializing,
+        "last_error": state.last_error,
+        "retrieval_mode": "lightweight",
     }

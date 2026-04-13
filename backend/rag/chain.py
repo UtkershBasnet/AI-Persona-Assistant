@@ -1,13 +1,12 @@
 """
 Conversational RAG chain — the core AI persona logic.
-Uses Groq (Llama 3.3 70B) with retrieved context from ChromaDB.
+Uses Groq with a lightweight in-memory retriever.
 """
 from typing import Dict, List, Optional
 from datetime import datetime
 from langchain_groq import ChatGroq
 from langchain.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain.schema import AIMessage, HumanMessage, BaseMessage
-from langchain_chroma import Chroma
 
 from ..config import get_settings
 
@@ -59,15 +58,11 @@ Today in Asia/Kolkata is {current_date}.
 class PersonaChat:
     """Manages conversational RAG for the AI persona."""
 
-    def __init__(self, vectorstore: Chroma, model: str = None, cal_link: str = None):
+    def __init__(self, retriever, model: str = None, cal_link: str = None):
         settings = get_settings()
         self.model = model or settings.CHAT_MODEL
         self.cal_link = cal_link or settings.CAL_COM_LINK
-        self.vectorstore = vectorstore
-        self.retriever = vectorstore.as_retriever(
-            search_type="similarity",
-            search_kwargs={"k": 6},
-        )
+        self.retriever = retriever
 
         self.llm = ChatGroq(
             model=self.model,
@@ -95,7 +90,7 @@ class PersonaChat:
 
     def _retrieve_context(self, query: str) -> str:
         """Retrieve relevant document chunks for the query."""
-        docs = self.retriever.invoke(query)
+        docs = self.retriever.invoke(query, k=6)
         if not docs:
             return "No specific context found for this query."
 

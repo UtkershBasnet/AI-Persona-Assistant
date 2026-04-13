@@ -14,20 +14,12 @@ from pydantic import BaseModel, Field
 from typing import Optional
 
 from ..config import get_settings
+from ..rag.runtime import ensure_runtime_ready, get_runtime_state
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-# Will be set by main.py after initialization
-persona_chat = None
-
 CAL_API_BASE = "https://api.cal.com/v2"
 IST = ZoneInfo("Asia/Kolkata")
-
-
-def set_persona_chat(chat_instance):
-    """Set the PersonaChat instance (called from main.py)."""
-    global persona_chat
-    persona_chat = chat_instance
 
 
 class ChatRequest(BaseModel):
@@ -205,17 +197,24 @@ async def _attempt_booking(booking_data: dict) -> BookingInfo:
 @router.post("/", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     """Send a message to Utkersh's AI persona and get a response."""
-    if persona_chat is None:
+    try:
+        state = await ensure_runtime_ready()
+    except FileNotFoundError:
         raise HTTPException(
             status_code=503,
             detail="AI persona is not initialized. Please run the ingestion script first.",
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=503,
+            detail=f"AI persona is still loading or failed to initialize: {exc}",
         )
 
     # Generate session ID if not provided
     session_id = request.session_id or str(uuid.uuid4())
 
     try:
-        response = await persona_chat.chat(session_id, request.message)
+        response = await state.persona_chat.chat(session_id, request.message)
 
         # Check if the AI wants to book a meeting
         booking_info = None
@@ -260,10 +259,11 @@ async def chat(request: ChatRequest):
 @router.post("/reset", response_model=ResetResponse)
 async def reset_session(request: ResetRequest):
     """Reset conversation history for a session."""
-    if persona_chat is None:
+    state = get_runtime_state()
+    if state.persona_chat is None:
         raise HTTPException(status_code=503, detail="AI persona not initialized.")
 
-    success = persona_chat.reset_session(request.session_id)
+    success = state.persona_chat.reset_session(request.session_id)
     return ResetResponse(
         success=success,
         message="Session reset successfully." if success else "Session not found.",
